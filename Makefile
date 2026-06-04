@@ -1,9 +1,13 @@
 APP_NAME=OKXMenuBar
+REPO_NAME=okx-menubar
 CONFIG=release
+VERSION?=v0.1.0
 BUNDLE=.build/$(APP_NAME).app
 BINARY=.build/$(CONFIG)/$(APP_NAME)
+DIST=dist
+DMG=$(DIST)/$(REPO_NAME)-$(VERSION)-macos.dmg
 
-.PHONY: run build app clean
+.PHONY: run build app dmg clean
 
 run:
 	swift run $(APP_NAME)
@@ -18,5 +22,8 @@ app: build
 	cp $(BINARY) $(BUNDLE)/Contents/MacOS/$(APP_NAME)
 	@echo "Built $(BUNDLE)"
 
+dmg: app
+	./scripts/build-dmg.sh "$(BUNDLE)" "$(DMG)" "$(APP_NAME)"
+
 clean:
-	rm -rf .build
+	rm -rf .build $(DIST)

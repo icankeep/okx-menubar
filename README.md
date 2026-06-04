@@ -58,6 +58,18 @@ The generated app bundle is located at:
 
 `Info.plist` is configured with `LSUIElement=true`, so the app runs as a menu bar utility without a Dock icon.
 
+### Build a `.dmg` package
+
+```bash
+make dmg VERSION=v0.1.0
+```
+
+The generated DMG is located at:
+
+```text
+dist/okx-menubar-v0.1.0-macos.dmg
+```
+
 ## Usage
 
 - **Left click** the status item to open the popup
@@ -145,6 +157,7 @@ Useful commands:
 swift run OKXMenuBar
 make build
 make app
+make dmg VERSION=v0.1.0
 make clean
 ```
 
@@ -163,4 +176,4 @@ There is also a helper script:
 
 ## License
 
-You can add a license file before publishing to GitHub, for example MIT.
+MIT
