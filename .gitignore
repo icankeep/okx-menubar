@@ -1,0 +1,9 @@
+.build/
+.swiftpm/
+.DS_Store
+*.log
+*.tmp
+*.swp
+*.swo
+.idea/
+.vscode/
