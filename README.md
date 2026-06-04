@@ -39,6 +39,14 @@ The app lives in the macOS menu bar and shows:
 - Swift 5.9+
 - Network access to `https://www.okx.com`
 
+## Install with Homebrew
+
+```bash
+brew install --cask icankeep/tap/okx-menubar
+```
+
+If Homebrew shows an unidentified developer warning on first launch, right click the app and choose **Open**.
+
 ## Quick Start
 
 ### Run in development mode
@@ -220,6 +228,14 @@ MIT
 - Xcode Command Line Tools
 - Swift 5.9+
 - 能访问 `https://www.okx.com`
+
+## 使用 Homebrew 安装
+
+```bash
+brew install --cask icankeep/tap/okx-menubar
+```
+
+如果第一次启动时 macOS 提示“未识别开发者”，请右键应用并选择 **Open**。
 
 ## 快速开始
 
