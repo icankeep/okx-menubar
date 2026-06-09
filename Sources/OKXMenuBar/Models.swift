@@ -87,6 +87,20 @@ enum CandleInterval: String, CaseIterable, Identifiable {
     }
 }
 
+enum StatusItemDisplayMode: String, CaseIterable, Identifiable {
+    case iconOnly
+    case tickerSummary
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .iconOnly: return "仅图标"
+        case .tickerSummary: return "长条行情"
+        }
+    }
+}
+
 struct MarketSnapshot: Identifiable, Equatable {
     var id: String { contract.id }
 

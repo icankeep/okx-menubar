@@ -14,12 +14,13 @@ A native macOS menu bar app for monitoring OKX perpetual swap prices, candlestic
 
 ## Features
 
-- Real-time OKX perpetual swap quotes in the macOS menu bar
+- Real-time OKX perpetual swap quotes, with a configurable menu bar display mode
 - Supports `BTC-USDT-SWAP`, `ETH-USDT-SWAP`, and `SOL-USDT-SWAP`
 - Popup view with 15m and 4H candlestick charts
 - Current perpetual positions via OKX private REST API
 - Position polling every 30 seconds when API credentials are configured
 - Left click to open the popup, right click for **Settings** / **Quit**
+- Menu bar display can be switched between **Icon Only** and **Ticker Summary**
 - Opening the popup refreshes only the **currently selected contract** candlestick data
 - Switching tabs refreshes only the newly selected contract candlestick data
 
@@ -27,7 +28,7 @@ A native macOS menu bar app for monitoring OKX perpetual swap prices, candlestic
 
 The app lives in the macOS menu bar and shows:
 
-- BTC / ETH headline prices in the status item
+- either a compact icon or BTC / ETH / SOL headline prices in the status item
 - ticker cards for supported contracts
 - current positions
 - 15m / 4H candlestick charts
@@ -90,6 +91,9 @@ dist/okx-menubar-v0.1.0-macos.dmg
 - **Right click** the status item to open the menu
   - **Settings**
   - **Quit**
+- In **Settings**, choose the menu bar display mode:
+  - **Icon Only** keeps the status item compact for small screens
+  - **Ticker Summary** shows BTC / ETH / SOL prices and 24h change in the menu bar
 - The popup automatically refreshes the K-line data for the currently selected contract
 - The popup is sized to show the full content whenever possible, instead of forcing a scroll view by default
 
@@ -114,6 +118,8 @@ The credentials are saved to:
 ```
 
 The file permission is set to `600` by the app.
+
+The menu bar display mode is stored in macOS `UserDefaults` and takes effect immediately when changed.
 
 ### Option 2: create the config file manually
 
@@ -204,12 +210,13 @@ MIT
 
 ## 功能特性
 
-- 在 macOS 菜单栏中实时显示 OKX 永续合约价格
+- 在 macOS 菜单栏中实时显示 OKX 永续合约价格，并支持自定义显示模式
 - 默认支持 `BTC-USDT-SWAP`、`ETH-USDT-SWAP`、`SOL-USDT-SWAP`
 - 弹窗内查看 15 分钟和 4 小时 K 线
 - 通过 OKX 私有 REST API 查看当前合约持仓
 - 配置 API 凭证后，每 30 秒轮询一次持仓
 - **左键** 打开弹窗，**右键** 打开菜单（设置 / 退出）
+- 菜单栏可在 **仅图标** 和 **长条行情** 两种模式之间切换
 - 打开弹窗时，只刷新**当前选中合约**的 K 线数据
 - 切换 tab 时，只刷新**新选中的合约**的 K 线数据
 
@@ -217,7 +224,7 @@ MIT
 
 应用常驻 macOS 顶部菜单栏，主要包含：
 
-- 状态栏中的 BTC / ETH 价格摘要
+- 状态栏中的紧凑图标，或 BTC / ETH / SOL 价格摘要
 - 各合约行情卡片
 - 当前持仓信息
 - 15m / 4H K 线图
@@ -280,6 +287,9 @@ dist/okx-menubar-v0.1.0-macos.dmg
 - **右键点击** 状态栏图标：打开菜单
   - **设置**
   - **退出**
+- 在 **设置** 中可以选择菜单栏显示模式：
+  - **仅图标**：适合内置屏等菜单栏空间较小的场景
+  - **长条行情**：在菜单栏直接显示 BTC / ETH / SOL 价格和 24 小时涨跌幅
 - 弹窗会自动刷新当前选中合约的 K 线
 - 弹窗会尽量按照内容自适应高度，避免默认必须滚动才能看全
 
@@ -304,6 +314,8 @@ dist/okx-menubar-v0.1.0-macos.dmg
 ```
 
 应用会自动将该文件权限设置为 `600`。
+
+菜单栏显示模式会保存到 macOS `UserDefaults`，切换后立即生效。
 
 ### 方式二：手动创建本地配置文件
 

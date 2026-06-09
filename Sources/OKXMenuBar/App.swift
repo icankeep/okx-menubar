@@ -27,19 +27,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSW
     }
 
     private func configureStatusItem() {
-        let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-        item.button?.title = "OKX --"
-        item.button?.font = .monospacedDigitSystemFont(ofSize: 12, weight: .medium)
+        let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         item.button?.image = NSImage(
             systemSymbolName: "chart.line.uptrend.xyaxis",
             accessibilityDescription: "OKX"
         )
-        item.button?.imagePosition = .imageLeading
-        item.button?.symbolConfiguration = NSImage.SymbolConfiguration(pointSize: 12, weight: .medium)
+        item.button?.toolTip = "OKX 合约行情"
         item.button?.target = self
         item.button?.action = #selector(handleStatusItemClick(_:))
         item.button?.sendAction(on: [.leftMouseUp, .rightMouseUp])
         statusItem = item
+        updateStatusItemContent()
     }
 
     private func configureMainMenu() {
@@ -111,8 +109,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSW
         store.$snapshots
             .receive(on: RunLoop.main)
             .sink { [weak self] _ in
-                self?.updateStatusTitle()
+                self?.updateStatusItemContent()
                 self?.schedulePopoverResize()
+            }
+            .store(in: &cancellables)
+
+        store.$statusItemDisplayMode
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                self?.updateStatusItemContent()
             }
             .store(in: &cancellables)
 
@@ -131,37 +136,39 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSW
             .store(in: &cancellables)
     }
 
-    private func updateStatusTitle() {
-        guard let button = statusItem?.button else { return }
+    private func updateStatusItemContent() {
+        guard let item = statusItem, let button = item.button else { return }
 
-        let snapshots = store.snapshots.filter {
-            $0.contract.id == "BTC-USDT-SWAP" || $0.contract.id == "ETH-USDT-SWAP"
+        switch store.statusItemDisplayMode {
+        case .iconOnly:
+            item.length = NSStatusItem.squareLength
+            button.title = ""
+            button.attributedTitle = NSAttributedString(string: "")
+            button.imagePosition = .imageOnly
+            button.symbolConfiguration = NSImage.SymbolConfiguration(pointSize: 14, weight: .medium)
+        case .tickerSummary:
+            item.length = NSStatusItem.variableLength
+            button.imagePosition = .imageLeading
+            button.symbolConfiguration = NSImage.SymbolConfiguration(pointSize: 12, weight: .medium)
+            button.attributedTitle = attributedStatusTitle()
         }
-        guard !snapshots.isEmpty else {
-            button.title = "OKX --"
-            return
-        }
+    }
 
+    private func attributedStatusTitle() -> NSAttributedString {
         let title = NSMutableAttributedString()
-        for snapshot in snapshots {
+        for snapshot in store.snapshots {
             guard let ticker = snapshot.ticker else { continue }
             if title.length > 0 {
                 title.append(NSAttributedString(string: "  "))
             }
-
-            let prefix = snapshot.contract.symbol == "BTC" ? "₿" : "Ξ"
-            title.append(statusText("\(prefix) \(NumberFormat.compactPrice(ticker.last)) "))
+            title.append(statusText("\(symbolPrefix(for: snapshot.contract.symbol)) \(NumberFormat.compactPrice(ticker.last)) "))
             title.append(statusText(
                 NumberFormat.percent(ticker.change24h),
                 color: ticker.change24h >= 0 ? .systemRed : .systemGreen
             ))
         }
 
-        if title.length == 0 {
-            button.title = "OKX --"
-        } else {
-            button.attributedTitle = title
-        }
+        return title.length == 0 ? statusText("OKX --") : title
     }
 
     private func statusText(_ text: String, color: NSColor = .labelColor) -> NSAttributedString {
@@ -172,6 +179,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSW
                 .foregroundColor: color
             ]
         )
+    }
+
+    private func symbolPrefix(for symbol: String) -> String {
+        switch symbol {
+        case "BTC": return "₿"
+        case "ETH": return "Ξ"
+        default: return symbol
+        }
     }
 
     @objc private func handleStatusItemClick(_ sender: AnyObject?) {
@@ -233,6 +248,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSW
 
     @objc private func openSettingsWindow() {
         popover?.performClose(nil)
+        NSApp.setActivationPolicy(.regular)
 
         if let settingsWindow {
             settingsWindow.makeKeyAndOrderFront(nil)
@@ -240,12 +256,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSW
             return
         }
 
-        let rootView = SettingsView(store: store) { [weak self] in
-            self?.settingsWindow?.close()
-            self?.settingsWindow = nil
-        }
+        let controller = SettingsViewController(store: store)
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 480, height: 360),
+            contentRect: NSRect(x: 0, y: 0, width: 520, height: 430),
             styleMask: [.titled, .closable, .miniaturizable],
             backing: .buffered,
             defer: false
@@ -254,8 +267,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSW
         window.center()
         window.isReleasedWhenClosed = false
         window.delegate = self
-        window.contentViewController = NSHostingController(rootView: rootView)
+        window.contentViewController = controller
         window.makeKeyAndOrderFront(nil)
+        window.makeKey()
         settingsWindow = window
         NSApp.activate(ignoringOtherApps: true)
     }
@@ -263,6 +277,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSW
     func windowWillClose(_ notification: Notification) {
         if notification.object as? NSWindow === settingsWindow {
             settingsWindow = nil
+            NSApp.setActivationPolicy(.accessory)
         }
     }
 

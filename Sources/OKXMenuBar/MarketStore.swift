@@ -10,20 +10,28 @@ final class MarketStore: ObservableObject {
     @Published private(set) var positionState: PositionState = .notConfigured
     @Published var selectedContractId: String
     @Published var selectedInterval: CandleInterval = .m15
+    @Published private(set) var statusItemDisplayMode: StatusItemDisplayMode
 
     private let client: OKXClient
     private let webSocketClient: OKXWebSocketClient
+    private let defaults: UserDefaults
     private var refreshTask: Task<Void, Never>?
     private var positionTask: Task<Void, Never>?
     private var uiFlushTask: Task<Void, Never>?
     private var pendingTickers: [String: Ticker] = [:]
     private var pendingCandles: [String: [Candle]] = [:]
 
-    init(client: OKXClient = OKXClient(), contracts: [Contract] = Contract.defaults) {
+    init(
+        client: OKXClient = OKXClient(),
+        contracts: [Contract] = Contract.defaults,
+        defaults: UserDefaults = .standard
+    ) {
         self.client = client
+        self.defaults = defaults
         self.webSocketClient = OKXWebSocketClient(contracts: contracts)
         self.snapshots = contracts.map { MarketSnapshot(contract: $0) }
         self.selectedContractId = contracts.first?.id ?? "BTC-USDT-SWAP"
+        self.statusItemDisplayMode = Self.loadStatusItemDisplayMode(defaults: defaults)
         bindWebSocket()
     }
 
@@ -36,9 +44,7 @@ final class MarketStore: ObservableObject {
     }
 
     var statusTitle: String {
-        let btc = compactPrice(for: "BTC-USDT-SWAP", prefix: "₿")
-        let eth = compactPrice(for: "ETH-USDT-SWAP", prefix: "Ξ")
-        let text = [btc, eth].compactMap { $0 }.joined(separator: "  ")
+        let text = snapshots.compactMap(statusSummary).joined(separator: "  ")
         return text.isEmpty ? "OKX --" : text
     }
 
@@ -150,9 +156,32 @@ final class MarketStore: ObservableObject {
         positionState = client.hasCredentials ? .loading : .notConfigured
     }
 
-    private func compactPrice(for id: String, prefix: String) -> String? {
-        guard let price = snapshots.first(where: { $0.contract.id == id })?.ticker?.last else { return nil }
-        return "\(prefix) \(NumberFormat.compactPrice(price))"
+    func setStatusItemDisplayMode(_ mode: StatusItemDisplayMode) {
+        statusItemDisplayMode = mode
+        defaults.set(mode.rawValue, forKey: Self.statusItemDisplayModeKey)
+    }
+
+    private static let statusItemDisplayModeKey = "statusItemDisplayMode"
+
+    private static func loadStatusItemDisplayMode(defaults: UserDefaults) -> StatusItemDisplayMode {
+        guard let rawValue = defaults.string(forKey: statusItemDisplayModeKey),
+              let mode = StatusItemDisplayMode(rawValue: rawValue) else {
+            return .iconOnly
+        }
+        return mode
+    }
+
+    private func statusSummary(for snapshot: MarketSnapshot) -> String? {
+        guard let ticker = snapshot.ticker else { return nil }
+        return "\(symbolPrefix(for: snapshot.contract.symbol)) \(NumberFormat.compactPrice(ticker.last)) \(NumberFormat.percent(ticker.change24h))"
+    }
+
+    private func symbolPrefix(for symbol: String) -> String {
+        switch symbol {
+        case "BTC": return "₿"
+        case "ETH": return "Ξ"
+        default: return symbol
+        }
     }
 
     private func refreshPositions() async {
